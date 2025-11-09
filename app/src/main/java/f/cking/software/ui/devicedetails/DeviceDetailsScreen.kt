@@ -381,6 +381,29 @@ object DeviceDetailsScreen {
                     metadata?.modelNumber?.let { Text(text = it) }
                     metadata?.serialNumber?.let { Text(text = it) }
                     metadata?.batteryLevel?.let { Text(text = "$it %") }
+                    metadata?.currentHeartRate?.let {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "♥ $it BPM",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            metadata.heartRateContactDetected?.let { contact ->
+                                Text(
+                                    text = if (contact) " (contact detected)" else " (no contact)",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    metadata?.energyExpended?.let {
+                        Text(
+                            text = "Energy: $it kJ",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         )

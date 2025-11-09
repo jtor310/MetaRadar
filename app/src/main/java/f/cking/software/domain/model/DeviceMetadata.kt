@@ -15,6 +15,10 @@ data class DeviceMetadata(
     val modelNumber: String? = null,
     val serialNumber: String? = null,
     val batteryLevel: Int? = null,
+    val currentHeartRate: Int? = null,
+    val heartRateContactDetected: Boolean? = null,
+    val energyExpended: Int? = null,
+    val rrIntervals: List<Int>? = null,
 ) {
 
     fun buildDisplayName(): String? {
@@ -27,7 +31,8 @@ data class DeviceMetadata(
     enum class ServiceTypes(val uuid: String) {
         GENERIC_ACCESS("1800"),
         DEVICE_INFORMATION("180A"),
-        BATTERY_SERVICE("180F");
+        BATTERY_SERVICE("180F"),
+        HEART_RATE_SERVICE("180D");
 
         companion object {
             val map = entries.associateBy(ServiceTypes::uuid)
@@ -40,7 +45,8 @@ data class DeviceMetadata(
         MANUFACTURER_NAME("2A29"),
         MODEL_NUMBER("2A24"),
         SERIAL_NUMBER("2A25"),
-        BATTERY_LEVEL("2A19");
+        BATTERY_LEVEL("2A19"),
+        HEART_RATE_MEASUREMENT("2A37");
 
         companion object {
             val map = entries.associateBy(CharacteristicType::uuid)
@@ -56,4 +62,8 @@ fun DeviceMetadata?.isNullOrEmpty(): Boolean {
             && modelNumber.isNullOrEmpty()
             && serialNumber.isNullOrEmpty()
             && batteryLevel == null
+            && currentHeartRate == null
+            && heartRateContactDetected == null
+            && energyExpended == null
+            && rrIntervals == null
 }

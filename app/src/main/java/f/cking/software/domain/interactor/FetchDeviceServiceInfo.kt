@@ -25,7 +25,8 @@ import timber.log.Timber
 
 class FetchDeviceServiceInfo(
     private val bleScannerHelper: BleScannerHelper,
-    private val devicesRepository: DevicesRepository
+    private val devicesRepository: DevicesRepository,
+    private val parseHeartRateMeasurement: ParseHeartRateMeasurement
 ) {
 
     suspend fun execute(device: DeviceData): DeviceMetadata? {
@@ -131,6 +132,22 @@ class FetchDeviceServiceInfo(
 
                                 CharacteristicType.BATTERY_LEVEL -> {
                                     metadata.copy(batteryLevel = value.getOrNull(0)?.toInt())
+                                }
+
+                                CharacteristicType.HEART_RATE_MEASUREMENT -> {
+                                    val heartRateData = parseHeartRateMeasurement.execute(value)
+                                    if (heartRateData != null) {
+                                        Timber.tag(TAG).i("Heart rate parsed: ${heartRateData.heartRate} BPM")
+                                        metadata.copy(
+                                            currentHeartRate = heartRateData.heartRate,
+                                            heartRateContactDetected = heartRateData.sensorContactDetected,
+                                            energyExpended = heartRateData.energyExpended,
+                                            rrIntervals = heartRateData.rrIntervals
+                                        )
+                                    } else {
+                                        Timber.tag(TAG).w("Failed to parse heart rate measurement")
+                                        metadata
+                                    }
                                 }
 
                                 else -> metadata

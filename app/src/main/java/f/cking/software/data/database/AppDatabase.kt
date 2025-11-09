@@ -11,6 +11,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import f.cking.software.data.database.dao.AppleContactDao
 import f.cking.software.data.database.dao.DeviceDao
+import f.cking.software.data.database.dao.HeartRateReadingsDao
 import f.cking.software.data.database.dao.JournalDao
 import f.cking.software.data.database.dao.LocationDao
 import f.cking.software.data.database.dao.RadarProfileDao
@@ -18,6 +19,7 @@ import f.cking.software.data.database.dao.TagDao
 import f.cking.software.data.database.entity.AppleContactEntity
 import f.cking.software.data.database.entity.DeviceEntity
 import f.cking.software.data.database.entity.DeviceToLocationEntity
+import f.cking.software.data.database.entity.HeartRateReadingEntity
 import f.cking.software.data.database.entity.JournalEntryEntity
 import f.cking.software.data.database.entity.LocationEntity
 import f.cking.software.data.database.entity.ProfileDetectEntity
@@ -39,6 +41,7 @@ import java.io.File
         JournalEntryEntity::class,
         TagEntity::class,
         ProfileDetectEntity::class,
+        HeartRateReadingEntity::class,
     ],
     autoMigrations = [
         AutoMigration(from = 7, to = 8),
@@ -47,7 +50,7 @@ import java.io.File
         AutoMigration(from = 11, to = 12),
     ],
     exportSchema = true,
-    version = 19,
+    version = 20,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -58,6 +61,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun journalDao(): JournalDao
     abstract fun tagDao(): TagDao
+    abstract fun heartRateReadingsDao(): HeartRateReadingsDao
 
     suspend fun backupDatabase(toUri: Uri, context: Context) {
         Timber.i("Backup DB to file: ${toUri}")
@@ -130,6 +134,7 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_16_17,
                     MIGRATION_17_18,
                     MIGRATION_18_19,
+                    MIGRATION_19_20,
                 )
                 .build()
             Timber.d("Database is ready!")
@@ -233,8 +238,36 @@ abstract class AppDatabase : RoomDatabase() {
                 """.trimIndent()
             )
             it.execSQL("""
-                CREATE INDEX IF NOT EXISTS index_profile_detect_profile_id_trigger_time 
+                CREATE INDEX IF NOT EXISTS index_profile_detect_profile_id_trigger_time
                 ON profile_detect(profile_id, trigger_time)
+            """.trimIndent())
+        }
+
+        val MIGRATION_19_20 = migration(19, 20) {
+            it.execSQL(
+                """
+                    CREATE TABLE IF NOT EXISTS heart_rate_reading (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        device_address TEXT NOT NULL,
+                        heart_rate INTEGER NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        contact_detected INTEGER,
+                        energy_expended INTEGER,
+                        rr_intervals TEXT
+                    )
+                """.trimIndent()
+            )
+            it.execSQL("""
+                CREATE INDEX IF NOT EXISTS index_heart_rate_reading_device_address
+                ON heart_rate_reading(device_address)
+            """.trimIndent())
+            it.execSQL("""
+                CREATE INDEX IF NOT EXISTS index_heart_rate_reading_timestamp
+                ON heart_rate_reading(timestamp)
+            """.trimIndent())
+            it.execSQL("""
+                CREATE INDEX IF NOT EXISTS index_heart_rate_reading_device_address_timestamp
+                ON heart_rate_reading(device_address, timestamp)
             """.trimIndent())
         }
 

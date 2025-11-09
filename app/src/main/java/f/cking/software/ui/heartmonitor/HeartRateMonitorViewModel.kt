@@ -10,7 +10,9 @@ import androidx.lifecycle.viewModelScope
 import f.cking.software.data.helpers.BleScannerHelper
 import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.domain.interactor.ParseHeartRateMeasurement
+import f.cking.software.domain.interactor.SaveHeartRateReadingInteractor
 import f.cking.software.domain.model.DeviceData
+import f.cking.software.domain.model.HeartRateReading
 import f.cking.software.fromBase64
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
@@ -26,6 +28,7 @@ class HeartRateMonitorViewModel(
     private val devicesRepository: DevicesRepository,
     private val bleScannerHelper: BleScannerHelper,
     private val parseHeartRateMeasurement: ParseHeartRateMeasurement,
+    private val saveHeartRateReadingInteractor: SaveHeartRateReadingInteractor,
 ) : ViewModel() {
 
     var deviceState: DeviceData? by mutableStateOf(null)
@@ -53,11 +56,6 @@ class HeartRateMonitorViewModel(
         val rrIntervals: List<Int>? = null,
         val timestamp: Long = System.currentTimeMillis(),
         val history: List<HeartRateReading> = emptyList()
-    )
-
-    data class HeartRateReading(
-        val heartRate: Int,
-        val timestamp: Long
     )
 
     init {
@@ -171,13 +169,39 @@ class HeartRateMonitorViewModel(
                     if (data != null) {
                         Timber.tag(TAG).d("Heart rate received: ${data.heartRate} BPM")
 
-                        // Update heart rate data
-                        val newReading = HeartRateReading(
+                        val timestamp = System.currentTimeMillis()
+
+                        // Create domain model for database
+                        val reading = HeartRateReading(
+                            deviceAddress = address,
                             heartRate = data.heartRate,
-                            timestamp = System.currentTimeMillis()
+                            timestamp = timestamp,
+                            contactDetected = data.sensorContactDetected,
+                            energyExpended = data.energyExpended,
+                            rrIntervals = data.rrIntervals
                         )
 
-                        // Keep last 100 readings for history
+                        // Save to database
+                        viewModelScope.launch {
+                            try {
+                                saveHeartRateReadingInteractor.execute(reading)
+                                Timber.tag(TAG).d("Heart rate saved to database")
+                            } catch (e: Exception) {
+                                Timber.tag(TAG).e(e, "Failed to save heart rate to database")
+                            }
+                        }
+
+                        // Update UI state (for session history)
+                        val newReading = HeartRateReading(
+                            deviceAddress = address,
+                            heartRate = data.heartRate,
+                            timestamp = timestamp,
+                            contactDetected = data.sensorContactDetected,
+                            energyExpended = data.energyExpended,
+                            rrIntervals = data.rrIntervals
+                        )
+
+                        // Keep last 100 readings for in-memory history
                         val updatedHistory = (heartRateData.history + newReading).takeLast(100)
 
                         heartRateData = HeartRateData(
@@ -185,7 +209,7 @@ class HeartRateMonitorViewModel(
                             sensorContactDetected = data.sensorContactDetected,
                             energyExpended = data.energyExpended,
                             rrIntervals = data.rrIntervals,
-                            timestamp = System.currentTimeMillis(),
+                            timestamp = timestamp,
                             history = updatedHistory
                         )
                     }

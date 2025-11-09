@@ -37,5 +37,7 @@ object InteractorsModule {
         factory { SaveOrMergeBatchInteractor(get(), get(), get(), get(), get(), get(), get()) }
         factory { ParseHeartRateMeasurement() }
         factory { FetchDeviceServiceInfo(get(), get(), get()) }
+        factory { SaveHeartRateReadingInteractor(get()) }
+        factory { GetHeartRateHistoryInteractor(get()) }
     }
 }

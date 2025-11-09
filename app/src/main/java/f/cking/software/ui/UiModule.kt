@@ -29,7 +29,7 @@ object UiModule {
         viewModel { SelectManufacturerViewModel(get()) }
         viewModel { SelectDeviceViewModel(get(), get()) }
         viewModel { DeviceDetailsViewModel(address = it[0], get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-        viewModel { HeartRateMonitorViewModel(address = it[0], get(), get(), get(), get()) }
+        viewModel { HeartRateMonitorViewModel(address = it[0], get(), get(), get(), get(), get()) }
         viewModel { JournalViewModel(get(), get(), get(), get(), get()) }
         viewModel { MapViewModel(get(), get(), get()) }
         viewModel { BackgroundLocationRequestViewModel(get(), get()) }

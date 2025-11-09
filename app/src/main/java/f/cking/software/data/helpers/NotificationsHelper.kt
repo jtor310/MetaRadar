@@ -135,6 +135,25 @@ class NotificationsHelper(
         )
     }
 
+    fun showHeartRateAlert(title: String, message: String, isHighAlert: Boolean) {
+        createHeartRateAlertChannel()
+
+        val openAppPendingIntent = getOpenAppIntent()
+
+        val notification = NotificationCompat.Builder(context, HEART_RATE_ALERT_CHANNEL)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_ble)
+            .setContentIntent(openAppPendingIntent)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(Random.nextInt(), notification)
+    }
+
     fun cancel(notificationId: Int) {
         notificationManager.cancel(notificationId)
     }
@@ -210,6 +229,18 @@ class NotificationsHelper(
         notificationManager.createNotificationChannel(channel)
     }
 
+    private fun createHeartRateAlertChannel() {
+        val channel = NotificationChannel(
+            HEART_RATE_ALERT_CHANNEL,
+            "Heart Rate Alerts",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            enableVibration(true)
+            setDescription("Notifications for abnormal heart rate readings")
+        }
+        notificationManager.createNotificationChannel(channel)
+    }
+
     data class NotificationButton(
         val intent: Intent,
         val text: String,
@@ -235,6 +266,7 @@ class NotificationsHelper(
         private const val RADAR_PROFILE_CHANNEL = "radar_profile_channel"
         private const val RADAR_PROFILE_GROUP = "radar_profile_group"
         private const val ERRORS_CHANNEL = "radar_errors_channel"
+        private const val HEART_RATE_ALERT_CHANNEL = "heart_rate_alert_channel"
 
         const val FOREGROUND_NOTIFICATION_ID = 42
     }

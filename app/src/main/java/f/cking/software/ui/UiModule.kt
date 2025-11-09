@@ -5,6 +5,7 @@ import f.cking.software.ui.devicedetails.DeviceDetailsViewModel
 import f.cking.software.ui.devicelist.DeviceListViewModel
 import f.cking.software.ui.heartmonitor.HeartRateHistoryViewModel
 import f.cking.software.ui.heartmonitor.HeartRateMonitorViewModel
+import f.cking.software.ui.heartmonitor.HeartRateSettingsViewModel
 import f.cking.software.ui.journal.JournalViewModel
 import f.cking.software.ui.main.MainViewModel
 import f.cking.software.ui.map.MapViewModel
@@ -30,8 +31,9 @@ object UiModule {
         viewModel { SelectManufacturerViewModel(get()) }
         viewModel { SelectDeviceViewModel(get(), get()) }
         viewModel { DeviceDetailsViewModel(address = it[0], get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-        viewModel { HeartRateMonitorViewModel(address = it[0], get(), get(), get(), get(), get()) }
-        viewModel { HeartRateHistoryViewModel(address = it[0], get(), get(), get()) }
+        viewModel { HeartRateMonitorViewModel(address = it[0], get(), get(), get(), get(), get(), get(), get(), get()) }
+        viewModel { HeartRateHistoryViewModel(address = it[0], get(), get(), get(), get(), get()) }
+        viewModel { HeartRateSettingsViewModel(get(), get(), get()) }
         viewModel { JournalViewModel(get(), get(), get(), get(), get()) }
         viewModel { MapViewModel(get(), get(), get()) }
         viewModel { BackgroundLocationRequestViewModel(get(), get()) }

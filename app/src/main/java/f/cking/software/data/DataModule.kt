@@ -13,6 +13,7 @@ import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.data.helpers.PowerModeHelper
 import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.data.repo.HeartRateRepository
+import f.cking.software.data.repo.HeartRateSettingsRepository
 import f.cking.software.data.repo.JournalRepository
 import f.cking.software.data.repo.LocationRepository
 import f.cking.software.data.repo.RadarProfilesRepository
@@ -42,6 +43,7 @@ class DataModule(
         single { LocationRepository(get()) }
         single { JournalRepository(get()) }
         single { HeartRateRepository(get()) }
+        single { HeartRateSettingsRepository(get()) }
         single { NotificationsHelper(get(), get(), get()) }
         single { PowerModeHelper(get(), get(), get()) }
         single { TagsRepository(get()) }

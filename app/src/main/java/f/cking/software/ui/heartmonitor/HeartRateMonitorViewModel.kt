@@ -8,7 +8,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import f.cking.software.data.helpers.BleScannerHelper
+import f.cking.software.data.helpers.NotificationsHelper
 import f.cking.software.data.repo.DevicesRepository
+import f.cking.software.data.repo.HeartRateSettingsRepository
+import f.cking.software.domain.interactor.CheckHeartRateAlertsInteractor
 import f.cking.software.domain.interactor.ParseHeartRateMeasurement
 import f.cking.software.domain.interactor.SaveHeartRateReadingInteractor
 import f.cking.software.domain.model.DeviceData
@@ -29,6 +32,9 @@ class HeartRateMonitorViewModel(
     private val bleScannerHelper: BleScannerHelper,
     private val parseHeartRateMeasurement: ParseHeartRateMeasurement,
     private val saveHeartRateReadingInteractor: SaveHeartRateReadingInteractor,
+    private val heartRateSettingsRepository: HeartRateSettingsRepository,
+    private val checkHeartRateAlertsInteractor: CheckHeartRateAlertsInteractor,
+    private val notificationsHelper: NotificationsHelper,
 ) : ViewModel() {
 
     var deviceState: DeviceData? by mutableStateOf(null)
@@ -72,6 +78,10 @@ class HeartRateMonitorViewModel(
 
     fun openHistory() {
         router.navigate(f.cking.software.ui.ScreenNavigationCommands.OpenHeartRateHistoryScreen(address))
+    }
+
+    fun openSettings() {
+        router.navigate(f.cking.software.ui.ScreenNavigationCommands.OpenHeartRateSettingsScreen)
     }
 
     fun startMonitoring() {
@@ -192,6 +202,38 @@ class HeartRateMonitorViewModel(
                                 Timber.tag(TAG).d("Heart rate saved to database")
                             } catch (e: Exception) {
                                 Timber.tag(TAG).e(e, "Failed to save heart rate to database")
+                            }
+                        }
+
+                        // Check for alerts
+                        viewModelScope.launch {
+                            try {
+                                val settings = heartRateSettingsRepository.settings.value
+                                if (settings.enabled) {
+                                    val alertResult = checkHeartRateAlertsInteractor.execute(reading, settings)
+                                    if (alertResult != null) {
+                                        when (alertResult) {
+                                            is CheckHeartRateAlertsInteractor.AlertResult.HighHeartRate -> {
+                                                Timber.tag(TAG).w("High heart rate alert: ${alertResult.heartRate} BPM (threshold: ${alertResult.threshold})")
+                                                notificationsHelper.showHeartRateAlert(
+                                                    title = "High Heart Rate Alert",
+                                                    message = "Heart rate is ${alertResult.heartRate} BPM (above ${alertResult.threshold} BPM)",
+                                                    isHighAlert = true
+                                                )
+                                            }
+                                            is CheckHeartRateAlertsInteractor.AlertResult.LowHeartRate -> {
+                                                Timber.tag(TAG).w("Low heart rate alert: ${alertResult.heartRate} BPM (threshold: ${alertResult.threshold})")
+                                                notificationsHelper.showHeartRateAlert(
+                                                    title = "Low Heart Rate Alert",
+                                                    message = "Heart rate is ${alertResult.heartRate} BPM (below ${alertResult.threshold} BPM)",
+                                                    isHighAlert = false
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Timber.tag(TAG).e(e, "Failed to check heart rate alerts")
                             }
                         }
 

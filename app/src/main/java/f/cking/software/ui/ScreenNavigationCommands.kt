@@ -11,6 +11,7 @@ import f.cking.software.ui.filter.FilterUiState
 import f.cking.software.ui.filter.SelectFilterScreen
 import f.cking.software.ui.heartmonitor.HeartRateHistoryScreen
 import f.cking.software.ui.heartmonitor.HeartRateMonitorScreen
+import f.cking.software.ui.heartmonitor.HeartRateSettingsScreen
 import f.cking.software.ui.main.MainScreen
 import f.cking.software.ui.profiledetails.ProfileDetailsScreen
 import f.cking.software.ui.selectdevice.SelectDeviceScreen
@@ -57,6 +58,10 @@ object ScreenNavigationCommands {
 
     class OpenHeartRateHistoryScreen(val address: String) : AddToStackCommand(screenFunction = { key, _ ->
         HeartRateHistoryScreen.Screen(address = address)
+    })
+
+    object OpenHeartRateSettingsScreen : AddToStackCommand(screenFunction = { key, _ ->
+        HeartRateSettingsScreen.Screen()
     })
 
     object OpenShaderTestScreen : AddToStackCommand(screenFunction = { key, router ->

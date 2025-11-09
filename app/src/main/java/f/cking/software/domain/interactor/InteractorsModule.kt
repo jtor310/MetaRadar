@@ -39,5 +39,8 @@ object InteractorsModule {
         factory { FetchDeviceServiceInfo(get(), get(), get()) }
         factory { SaveHeartRateReadingInteractor(get()) }
         factory { GetHeartRateHistoryInteractor(get()) }
+        factory { CheckHeartRateAlertsInteractor() }
+        factory { ExportHeartRateDataInteractor(get()) }
+        factory { CleanupOldHeartRateDataInteractor(get(), get()) }
     }
 }

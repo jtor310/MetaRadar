@@ -5,12 +5,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import f.cking.software.data.repo.DevicesRepository
+import f.cking.software.domain.interactor.ExportHeartRateDataInteractor
 import f.cking.software.domain.interactor.GetHeartRateHistoryInteractor
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.HeartRateReading
+import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
+import java.io.File
+import java.io.FileWriter
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -20,6 +25,8 @@ class HeartRateHistoryViewModel(
     private val router: Router,
     private val devicesRepository: DevicesRepository,
     private val getHeartRateHistoryInteractor: GetHeartRateHistoryInteractor,
+    private val exportHeartRateDataInteractor: ExportHeartRateDataInteractor,
+    private val context: Context,
 ) : ViewModel() {
 
     var deviceState: DeviceData? by mutableStateOf(null)
@@ -142,6 +149,51 @@ class HeartRateHistoryViewModel(
         return readings
             .groupBy { getHeartRateZone(it.heartRate) }
             .mapValues { it.value.size }
+    }
+
+    fun openSettings() {
+        router.navigate(ScreenNavigationCommands.OpenHeartRateSettingsScreen)
+    }
+
+    fun exportData() {
+        viewModelScope.launch {
+            try {
+                val fromTime = if (timeRange == TimeRange.ALL_TIME) {
+                    0L
+                } else {
+                    System.currentTimeMillis() - timeRange.milliseconds
+                }
+
+                val readings = getHeartRateHistoryInteractor.execute(
+                    deviceAddress = address,
+                    fromTime = fromTime
+                )
+
+                if (readings.isEmpty()) {
+                    Timber.tag(TAG).w("No readings to export")
+                    return@launch
+                }
+
+                val csv = exportHeartRateDataInteractor.execute(readings)
+
+                // Save to Downloads folder
+                val downloadsDir = File(context.getExternalFilesDir(null), "Downloads")
+                if (!downloadsDir.exists()) {
+                    downloadsDir.mkdirs()
+                }
+
+                val fileName = "heart_rate_${address.replace(":", "")}_${System.currentTimeMillis()}.csv"
+                val file = File(downloadsDir, fileName)
+
+                FileWriter(file).use { writer ->
+                    writer.write(csv)
+                }
+
+                Timber.tag(TAG).d("Heart rate data exported to: ${file.absolutePath}")
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to export heart rate data")
+            }
+        }
     }
 
     enum class HeartRateZone(val displayName: String, val colorValue: Long) {

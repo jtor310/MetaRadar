@@ -70,6 +70,10 @@ class HeartRateMonitorViewModel(
         router.navigate(BackCommand)
     }
 
+    fun openHistory() {
+        router.navigate(f.cking.software.ui.ScreenNavigationCommands.OpenHeartRateHistoryScreen(address))
+    }
+
     fun startMonitoring() {
         if (connectionStatus is ConnectionStatus.MONITORING) {
             Timber.tag(TAG).w("Already monitoring heart rate")

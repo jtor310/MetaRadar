@@ -119,6 +119,14 @@ object HeartRateMonitorScreen {
                         }
                     }
 
+                    // View History button
+                    OutlinedButton(
+                        onClick = { viewModel.openHistory() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("📊 View History & Analytics")
+                    }
+
                     // Control buttons
                     ControlButtons(viewModel)
 

@@ -327,6 +327,8 @@ object DeviceDetailsScreen {
                     DeviceMetadataView(deviceData, viewModel)
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    HeartRateMonitorButton(deviceData, viewModel)
+
                     Services(viewModel.services, viewModel)
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -407,6 +409,27 @@ object DeviceDetailsScreen {
                 }
             }
         )
+    }
+
+    @Composable
+    private fun HeartRateMonitorButton(device: DeviceData, viewModel: DeviceDetailsViewModel) {
+        // Check if device has Heart Rate Service (0x180D) or is classified as HeartPulseRate
+        val hasHeartRateService = viewModel.services.any { service ->
+            service.uuid.uppercase().contains("180D")
+        } || device.deviceClass is f.cking.software.domain.model.DeviceClass.Health.HeartPulseRate
+
+        if (hasHeartRateService) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { viewModel.openHeartRateMonitor() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "♥")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Open Heart Rate Monitor")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
     }
 
     @Composable

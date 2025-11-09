@@ -416,6 +416,10 @@ class DeviceDetailsViewModel(
         router.navigate(BackCommand)
     }
 
+    fun openHeartRateMonitor() {
+        router.navigate(f.cking.software.ui.ScreenNavigationCommands.OpenHeartRateMonitorScreen(address))
+    }
+
     enum class HistoryPeriod(
         val periodMills: Long,
         @StringRes val displayNameRes: Int,

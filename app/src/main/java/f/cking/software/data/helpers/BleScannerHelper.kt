@@ -127,6 +127,12 @@ class BleScannerHelper(
                     }
                 }
 
+                override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+                    super.onCharacteristicChanged(gatt, characteristic, value)
+                    Timber.tag(TAG_CONNECT).d("Characteristic notification. ${characteristic.uuid}, value: ${value.decodeToString()}")
+                    trySend(DeviceConnectResult.CharacteristicNotification(gatt, characteristic, value.toBase64()))
+                }
+
                 override fun onDescriptorRead(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int, value: ByteArray) {
                     super.onDescriptorRead(gatt, descriptor, status, value)
                     if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -324,12 +330,57 @@ class BleScannerHelper(
         gatt.readDescriptor(descriptor)
     }
 
+    @SuppressLint("MissingPermission")
+    fun enableCharacteristicNotification(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, enable: Boolean): Boolean {
+        Timber.tag(TAG_CONNECT).d("${if (enable) "Enabling" else "Disabling"} notifications for characteristic ${characteristic.uuid}")
+
+        // Enable/disable local notifications
+        val notificationEnabled = gatt.setCharacteristicNotification(characteristic, enable)
+        if (!notificationEnabled) {
+            Timber.tag(TAG_CONNECT).e("Failed to ${if (enable) "enable" else "disable"} notification for characteristic ${characteristic.uuid}")
+            return false
+        }
+
+        // Write to the Client Characteristic Configuration Descriptor (CCCD)
+        val descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
+        if (descriptor == null) {
+            Timber.tag(TAG_CONNECT).e("CCCD descriptor not found for characteristic ${characteristic.uuid}")
+            return false
+        }
+
+        val value = if (enable) {
+            BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+        } else {
+            BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+        }
+
+        val writeSuccess = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeDescriptor(descriptor, value) == BluetoothGatt.GATT_SUCCESS
+        } else {
+            @Suppress("DEPRECATION")
+            descriptor.value = value
+            @Suppress("DEPRECATION")
+            gatt.writeDescriptor(descriptor)
+        }
+
+        if (!writeSuccess) {
+            Timber.tag(TAG_CONNECT).e("Failed to write CCCD for characteristic ${characteristic.uuid}")
+            return false
+        }
+
+        Timber.tag(TAG_CONNECT).d("Successfully ${if (enable) "enabled" else "disabled"} notifications for characteristic ${characteristic.uuid}")
+        return true
+    }
+
     sealed interface DeviceConnectResult {
         data class AvailableServices(val gatt: BluetoothGatt, val services: List<BluetoothGattService>) : DeviceConnectResult
         data class CharacteristicRead(val gatt: BluetoothGatt, val characteristic: BluetoothGattCharacteristic, val valueEncoded64: String) :
             DeviceConnectResult
 
         data class FailedReadCharacteristic(val gatt: BluetoothGatt, val characteristic: BluetoothGattCharacteristic) : DeviceConnectResult
+        data class CharacteristicNotification(val gatt: BluetoothGatt, val characteristic: BluetoothGattCharacteristic, val valueEncoded64: String) :
+            DeviceConnectResult
+
         data class DescriptorRead(val gatt: BluetoothGatt, val descriptor: BluetoothGattDescriptor, val valueEncoded64: String) : DeviceConnectResult
         data object Connecting : DeviceConnectResult
         data class Connected(val gatt: BluetoothGatt) : DeviceConnectResult
@@ -474,5 +525,6 @@ class BleScannerHelper(
         private const val CONNECTION_FAILED_BEFORE_INITIALIZING = 0x85
         private const val CONNECTION_FAILED_TO_ESTABLISH = 0x3E
         private const val CONNECTION_TERMINATED = 0x16
+        private val CLIENT_CHARACTERISTIC_CONFIG_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
 }
